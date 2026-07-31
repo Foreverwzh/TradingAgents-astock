@@ -51,8 +51,12 @@ class TestParseRating:
         )
         assert parse_rating(text) == "Sell"
 
-    def test_no_rating_returns_default(self):
-        assert parse_rating("No clear directional signal at this time.") == "Hold"
+    def test_no_rating_returns_none(self):
+        # Deliberately None, not "Hold": a failed parse must be distinguishable
+        # from a real Hold. A 2026-07 production A-share report concluded
+        # "维持 Underweight（减持）评级" and was stored as Hold purely because the
+        # parser found nothing and fell back -- a directional bias, not a gap.
+        assert parse_rating("No clear directional signal at this time.") is None
 
     def test_no_rating_custom_default(self):
         assert parse_rating("Plain prose.", default="Underweight") == "Underweight"
@@ -85,6 +89,6 @@ class TestSignalProcessor:
         llm.invoke.assert_not_called()
         llm.with_structured_output.assert_not_called()
 
-    def test_default_when_no_rating_present(self):
+    def test_none_when_no_rating_present(self):
         sp = SignalProcessor()
-        assert sp.process_signal("Plain prose without a recommendation.") == "Hold"
+        assert sp.process_signal("Plain prose without a recommendation.") is None

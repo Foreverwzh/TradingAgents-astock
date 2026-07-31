@@ -76,4 +76,11 @@ class AgentState(MessagesState):
         RiskDebateState, "Current state of the debate on evaluating risk"
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
+    pm_output_mode: Annotated[
+        str,
+        "How the PM decision was produced: 'structured' | 'json' | 'freetext'. "
+        "Anything but 'structured' means a degraded path was taken and the "
+        "rating had to be recovered from prose -- surfaced so silent "
+        "degradation is auditable rather than invisible.",
+    ]
     past_context: Annotated[str, "Memory log context injected at run start (same-ticker decisions + cross-ticker lessons)"]

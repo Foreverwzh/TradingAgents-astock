@@ -26,6 +26,11 @@ class SignalProcessor:
         # parseable from the rendered markdown without a second LLM call.
         self.quick_thinking_llm = quick_thinking_llm
 
-    def process_signal(self, full_signal: str) -> str:
-        """Return one of Buy / Overweight / Hold / Underweight / Sell."""
+    def process_signal(self, full_signal: str) -> str | None:
+        """Return one of Buy / Overweight / Hold / Underweight / Sell.
+
+        ``None`` when no rating could be found -- callers must keep that
+        distinct from a real Hold (a failed parse recorded as neutral is a
+        directional bias, not a missing value).
+        """
         return parse_rating(full_signal)

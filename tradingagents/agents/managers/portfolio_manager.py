@@ -73,12 +73,20 @@ def create_portfolio_manager(llm):
 
 Be decisive and ground every conclusion in specific evidence from the analysts.{get_language_instruction()}"""
 
+        # The PM's rendered markdown is the sole source of the stored rating and
+        # of the `**Field**: value` template the dashboard parses, so this is the
+        # one node where knowing *how* the answer was produced matters: on the
+        # free-text rung there is neither a `**Rating**:` header nor any parseable
+        # field, and both the rating column and the summary column go wrong.
+        outcome: dict = {}
         final_trade_decision = invoke_structured_or_freetext(
             structured_llm,
             llm,
             prompt,
             render_pm_decision,
             "Portfolio Manager",
+            schema=PortfolioDecision,
+            outcome=outcome,
         )
 
         new_risk_debate_state = {
@@ -97,6 +105,7 @@ Be decisive and ground every conclusion in specific evidence from the analysts.{
         return {
             "risk_debate_state": new_risk_debate_state,
             "final_trade_decision": final_trade_decision,
+            "pm_output_mode": outcome.get("mode", "freetext"),
         }
 
     return portfolio_manager_node
