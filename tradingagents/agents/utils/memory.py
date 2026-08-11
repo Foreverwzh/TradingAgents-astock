@@ -72,8 +72,17 @@ class TradingMemoryLog:
         return [e for e in self.load_entries() if e.get("pending")]
 
     def get_past_context(self, ticker: str, n_same: int = 5, n_cross: int = 3) -> str:
-        """Return formatted past context string for agent prompt injection."""
-        entries = [e for e in self.load_entries() if not e.get("pending")]
+        """Return formatted past context string for agent prompt injection.
+
+        Same-ticker entries are included even while still `pending` (outcome
+        not yet resolved) -- otherwise the PM never sees yesterday's call for
+        this exact name until Phase B has scored it days/weeks later, and
+        reverses a rating with no memory of having just made the opposite
+        one. Cross-ticker entries stay resolved-only: a pending entry has no
+        REFLECTION yet, so there is no lesson to draw from it for another
+        ticker.
+        """
+        entries = self.load_entries()
         if not entries:
             return ""
 
@@ -83,7 +92,7 @@ class TradingMemoryLog:
                 break
             if e["ticker"] == ticker and len(same) < n_same:
                 same.append(e)
-            elif e["ticker"] != ticker and len(cross) < n_cross:
+            elif e["ticker"] != ticker and not e.get("pending") and len(cross) < n_cross:
                 cross.append(e)
 
         if not same and not cross:

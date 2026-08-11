@@ -249,9 +249,23 @@ class TestTradingMemoryLogCore:
         log = make_log(tmp_path)
         assert log.get_past_context("NVDA") == ""
 
-    def test_get_past_context_pending_excluded(self, tmp_path):
+    def test_get_past_context_same_ticker_pending_included(self, tmp_path):
+        """A same-ticker entry with no resolved outcome yet must still surface --
+        otherwise the PM has no memory of its own most recent call on this name
+        until Phase B scores it days/weeks later, and flips the rating with no
+        awareness it is reversing itself."""
         log = make_log(tmp_path)
         log.store_decision("NVDA", "2026-01-10", DECISION_BUY)
+        ctx = log.get_past_context("NVDA")
+        assert "Past analyses of NVDA" in ctx
+        assert DECISION_BUY.splitlines()[0] in ctx
+        assert "n/a" in ctx  # no resolved return/alpha yet
+
+    def test_get_past_context_cross_ticker_pending_excluded(self, tmp_path):
+        """Pending entries for OTHER tickers stay excluded: there is no
+        REFLECTION yet, so there is no lesson to draw from them."""
+        log = make_log(tmp_path)
+        log.store_decision("AAPL", "2026-01-05", DECISION_BUY)
         assert log.get_past_context("NVDA") == ""
 
     def test_get_past_context_same_ticker(self, tmp_path):
@@ -688,11 +702,16 @@ class TestPortfolioManagerInjection:
     # Full A→B→C integration cycle
 
     def test_full_cycle_store_resolve_inject(self, tmp_path):
-        """store pending → resolve with outcome → past_context non-empty for PM."""
+        """store pending → past_context already shows the pending call to the
+        PM (sans outcome) → resolve with outcome → past_context now carries
+        the REFLECTION too."""
         log = make_log(tmp_path)
         log.store_decision("NVDA", "2026-01-05", DECISION_BUY)
         assert len(log.get_pending_entries()) == 1
-        assert log.get_past_context("NVDA") == ""
+        pending_ctx = log.get_past_context("NVDA")
+        assert "NVDA" in pending_ctx
+        assert "DECISION:" in pending_ctx
+        assert "REFLECTION:" not in pending_ctx
         log.update_with_outcome("NVDA", "2026-01-05", 0.05, 0.02, 5, "Correct call.")
         assert log.get_pending_entries() == []
         past_ctx = log.get_past_context("NVDA")

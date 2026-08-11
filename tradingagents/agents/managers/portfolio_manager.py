@@ -34,7 +34,14 @@ def create_portfolio_manager(llm):
 
         past_context = state.get("past_context", "")
         lessons_line = (
-            f"- Lessons from prior decisions and outcomes:\n{past_context}\n"
+            f"- Lessons from prior decisions and outcomes:\n{past_context}\n\n"
+            "**Continuity requirement**: if a prior analysis of this same ticker "
+            "appears above, state explicitly whether today's rating confirms or "
+            "reverses it. A reversal must cite a specific, named change in the "
+            "evidence since that prior call (new data, a catalyst or risk that "
+            "materialized, a price level that was breached) -- re-weighing the "
+            "same facts with a different narrative is not sufficient grounds to "
+            "flip the rating.\n"
             if past_context
             else ""
         )
